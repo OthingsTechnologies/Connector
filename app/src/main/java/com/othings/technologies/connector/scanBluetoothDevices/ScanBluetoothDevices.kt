@@ -51,7 +51,20 @@ class ScanBluetoothDevices : AppCompatActivity() {
 
             var bluetoothDevice = bluetoothDevices.get(position)
 
-            var data = "^XA\n" +
+            connector.findBluetoothDevice(bluetoothDevice.address).observe(this,Observer<BluetoothDevice>{bluetoothDevice->
+
+                var b = bluetoothDevice;
+                connector.linkBluetoothDevice(b).observe(this,Observer<BluetoothDevice>{linkedDevice->
+
+                    var asds ="asdasd"
+
+                });
+
+
+            })
+
+
+           /* var data = "^XA\n" +
                     "\n" +
                     "^FX Top section with company logo, name and address.\n" +
                     "^CF0,60\n" +
@@ -97,7 +110,14 @@ class ScanBluetoothDevices : AppCompatActivity() {
 
                 Snackbar.make(binding.contextView,data, Snackbar.LENGTH_SHORT).show()
 
-            })
+            })*/
+
+        })
+
+
+        connector.handleErrors().observe(this, Observer<Throwable> {error->
+
+            Snackbar.make(binding.contextView,error.message.toString(), Snackbar.LENGTH_SHORT).show()
 
         })
 

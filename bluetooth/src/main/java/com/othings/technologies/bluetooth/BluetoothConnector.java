@@ -38,6 +38,7 @@ public class BluetoothConnector implements ActivityCompat.OnRequestPermissionsRe
     private Context context;
     private LifecycleOwner lifecycleOwner;
     private BluetoothAdapter bluetoothAdapter;
+    private Handler pairingHandler;
 
     /*
         PERMISSIONS
@@ -56,6 +57,8 @@ public class BluetoothConnector implements ActivityCompat.OnRequestPermissionsRe
     private MutableLiveData<String> bluetoothStatus; // PARA EL ESTATUS DE LOS PROCESOS BLUETOOTH
     private MutableLiveData<Throwable> handleErrors; // PARA EL MANEJO DE ERRORES
     private MutableLiveData<BluetoothDevice> bluetoothDevice; // PARA ENCONTRAR UN DISPOSITIVO CONCRETO
+    private MutableLiveData<BluetoothDevice> linkDevice; // PARA PAREAR UN DSIPOSITIVO
+    private MutableLiveData<BluetoothDevice> bluetoothDevices; // PARA ENCONTRAR UN DISPOSITIVO CONCRETO
     private MutableLiveData<List<BluetoothDevice>> bondedDevices; // PARA LOS DISPOSITIVOS EMPAREJADOS
     private MutableLiveData<String> bluetoothResponses;
 
@@ -85,19 +88,18 @@ public class BluetoothConnector implements ActivityCompat.OnRequestPermissionsRe
 
      */
 
-    private boolean FINDING_DEVICES;
-    private boolean FILTERING_DEVICES;
     private boolean BONDING_DEVICE;
     private boolean SENDING_DATA;
-    private boolean BONDED_DEVICE;
+    private boolean DEVICE_BONDED;
     private Action action;
     private int [] FILTERS;
     int TIMEOUT;
     private enum Action{
 
-        FINDING_DEVICE,
-        FINDING_DEVICE_WITH_MAC_ADDRESS,
-        FILTERING_DEVICE
+        SCANNING_DEVICES,
+        SEARCHING_DEVICE,
+        FILTERING_DEVICES,
+        LINKING_DEVICE
 
     }
     private byte [] DATA;
@@ -112,6 +114,7 @@ public class BluetoothConnector implements ActivityCompat.OnRequestPermissionsRe
     private static final int ACTION_SCAN_BLUETOOTH_DEVICES_WITH_FILTERS_AND_TIMEOUT = 3003;
     private static final int ACTION_SCAN_BLUETOOTH_DEVICES = 3004;
     private static final int ACTION_SCAN_BLUETOOTH_DEVICES_WITH_TIMEOUT = 3005;
+    private static final int ACTION_PAIR_DEVICE = 3006;
 
     public BluetoothConnector(Context context, LifecycleOwner lifecycleOwner){
 
@@ -121,6 +124,8 @@ public class BluetoothConnector implements ActivityCompat.OnRequestPermissionsRe
         this.bluetoothStatus = new MutableLiveData<String>();
         this.handleErrors = new MutableLiveData<Throwable>();
         this.bluetoothDevice = new MutableLiveData<BluetoothDevice>();
+        this.bluetoothDevices = new MutableLiveData<BluetoothDevice>();
+        this.linkDevice = new MutableLiveData<BluetoothDevice>();
         this.bluetoothDevicesList = new ArrayList<>();
         this.filters = new ArrayList<>();
         action = null;
@@ -143,6 +148,10 @@ public class BluetoothConnector implements ActivityCompat.OnRequestPermissionsRe
     }
     public MutableLiveData<String> getBluetoothStatus(){
         return bluetoothStatus;
+    }
+
+    public MutableLiveData<Throwable> handleErrors() {
+        return handleErrors;
     }
 
     /*
@@ -198,7 +207,7 @@ public class BluetoothConnector implements ActivityCompat.OnRequestPermissionsRe
                     bluetoothAdapter.cancelDiscovery();
                 }
 
-                action = Action.FILTERING_DEVICE;
+                action = Action.FILTERING_DEVICES;
                 bluetoothAdapter.startDiscovery();
 
             }
@@ -216,7 +225,7 @@ public class BluetoothConnector implements ActivityCompat.OnRequestPermissionsRe
 
         }
 
-        return bluetoothDevice;
+        return bluetoothDevices;
 
     }
     public MutableLiveData<BluetoothDevice> scanBluetoothDevicesWithFiltersAndTimeOut( int timeout , int ...filters){
@@ -236,7 +245,7 @@ public class BluetoothConnector implements ActivityCompat.OnRequestPermissionsRe
                     bluetoothAdapter.cancelDiscovery();
                 }
 
-                action = Action.FILTERING_DEVICE;
+                action = Action.FILTERING_DEVICES;
                 bluetoothAdapter.startDiscovery();
                 new Handler().postDelayed(new Runnable() {
                     @Override
@@ -262,7 +271,7 @@ public class BluetoothConnector implements ActivityCompat.OnRequestPermissionsRe
 
         }
 
-        return bluetoothDevice;
+        return bluetoothDevices;
 
     }
     public MutableLiveData<BluetoothDevice> scanBluetoothDevices(){
@@ -275,7 +284,7 @@ public class BluetoothConnector implements ActivityCompat.OnRequestPermissionsRe
                 if( bluetoothAdapter.isDiscovering() ){
                     bluetoothAdapter.cancelDiscovery();
                 }
-
+                action = Action.SCANNING_DEVICES;
                 bluetoothAdapter.startDiscovery();
 
             }
@@ -293,7 +302,7 @@ public class BluetoothConnector implements ActivityCompat.OnRequestPermissionsRe
 
         }
 
-        return bluetoothDevice;
+        return bluetoothDevices;
 
     }
     public MutableLiveData<BluetoothDevice> scanBluetoothDevicesWithTimeOut( int timeout ){
@@ -308,6 +317,7 @@ public class BluetoothConnector implements ActivityCompat.OnRequestPermissionsRe
                     bluetoothAdapter.cancelDiscovery();
                 }
 
+                action = Action.SCANNING_DEVICES;
                 bluetoothAdapter.startDiscovery();
 
                 new Handler().postDelayed(new Runnable() {
@@ -334,21 +344,21 @@ public class BluetoothConnector implements ActivityCompat.OnRequestPermissionsRe
 
         }
 
-        return bluetoothDevice;
+        return bluetoothDevices;
 
     }
 
     /*
         EMPAREJAMIENTO Y DESEMPAREJAMIENTO DE DISPOSITIVOS BLUETOOTH
      */
-    public void linkBluetoothDevice(BluetoothDevice bluetoothDevice){
+    public MutableLiveData<BluetoothDevice> linkBluetoothDevice(BluetoothDevice bluetoothDevice){
 
-        try {
-            Method method = bluetoothDevice.getClass().getMethod("createBond",(Class[]) null);
-            method.invoke(bluetoothDevice,(Object[]) null);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        action = Action.LINKING_DEVICE;
+
+        bluetoothDevice.createBond();
+        DEVICE_BONDED = false;
+
+        return linkDevice;
 
     }
     public void unlinkBluetoothDevice( BluetoothDevice bluetoothDevice ){
@@ -388,10 +398,15 @@ public class BluetoothConnector implements ActivityCompat.OnRequestPermissionsRe
 
                         }
                         else{
-                            action = Action.FINDING_DEVICE_WITH_MAC_ADDRESS;
+                            action = Action.SEARCHING_DEVICE;
                             BLUETOOTH_DEVICE_FOUND = false;
                             MAC_ADDRESS = macAddress;
-                            scanBluetoothDevices();
+
+                            if( bluetoothAdapter.isDiscovering() ){
+                                bluetoothAdapter.cancelDiscovery();
+                            }
+
+                            bluetoothAdapter.startDiscovery();
 
                         }
 
@@ -401,7 +416,6 @@ public class BluetoothConnector implements ActivityCompat.OnRequestPermissionsRe
         return bluetoothDevice;
 
     }
-
     public MutableLiveData<String> sendData( BluetoothDevice bluetoothDevice , byte [] data ){
 
         if( bluetoothDevice.getBondState() == BluetoothDevice.BOND_BONDED ){
@@ -421,7 +435,6 @@ public class BluetoothConnector implements ActivityCompat.OnRequestPermissionsRe
         return bluetoothResponses;
 
     }
-
     private void requestPermissions(){
 
         ActivityCompat.requestPermissions((AppCompatActivity) context,
@@ -494,47 +507,41 @@ public class BluetoothConnector implements ActivityCompat.OnRequestPermissionsRe
 
                 BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
 
-                if( !existBluetoothDeviceOnList(device) ){
-
-                    if( filters.size() == 0){
-                        bluetoothDevicesList.add(device);
-                        bluetoothDevice.setValue(device);
-                    }
-                    else{
-
-                        if( hasFilter(device) ){
-                            bluetoothDevicesList.add(device);
-                            bluetoothDevice.setValue(device);
-                        }
-
-                    }
-
-                }
-
-                if( action.hashCode() == Action.FINDING_DEVICE.hashCode() ){
-
-                    bluetoothStatus.postValue(ACTION_FOUND);
-
-                }
-                else if( action.hashCode() == Action.FILTERING_DEVICE.hashCode() ){
-
-                    bluetoothDevice.postValue(device);
-
-                }
-                else if( action.hashCode() == Action.FINDING_DEVICE_WITH_MAC_ADDRESS.hashCode() ){
+                if( BluetoothConnector.this.action.hashCode() == Action.SEARCHING_DEVICE.hashCode() ){
 
                     if( MAC_ADDRESS.equals(device.getAddress()) ){
-
                         BLUETOOTH_DEVICE_FOUND = true;
-                        bluetoothDevice.postValue(device);
+                        bluetoothStatus.postValue(ACTION_FOUND);
+                        bluetoothDevice.setValue(device);
                         bluetoothAdapter.cancelDiscovery();
+                    }
+
+                }
+                else if(  BluetoothConnector.this.action.hashCode() == Action.FILTERING_DEVICES.hashCode() || action.hashCode() == Action.SCANNING_DEVICES.hashCode() ){
+
+                    if( !existBluetoothDeviceOnList(device) ){
+
+                        if( filters.size() == 0){
+                            bluetoothStatus.postValue(ACTION_FOUND);
+                            bluetoothDevicesList.add(device);
+                            bluetoothDevices.setValue(device);
+                        }
+                        else{
+
+                            if( hasFilter(device) ){
+                                bluetoothStatus.postValue(ACTION_FOUND);
+                                bluetoothDevicesList.add(device);
+                                bluetoothDevices.setValue(device);
+                            }
+
+                        }
 
                     }
 
                 }
                 else{
 
-                    bluetoothDevice.postValue(device);
+                    bluetoothDevices.postValue(device);
 
                 }
 
@@ -542,6 +549,19 @@ public class BluetoothConnector implements ActivityCompat.OnRequestPermissionsRe
             else if( BluetoothDevice.ACTION_PAIRING_REQUEST.equals(action) ){
 
                 bluetoothStatus.postValue(ACTION_PAIRING_REQUEST);
+                pairingHandler = new Handler();
+
+                pairingHandler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+
+                        if( !DEVICE_BONDED ){
+                            linkDevice.setValue(null);
+                        }
+
+                    }
+
+                },35000);
 
             }
             else if( BluetoothDevice.ACTION_BOND_STATE_CHANGED.equals(action) ){
@@ -551,12 +571,16 @@ public class BluetoothConnector implements ActivityCompat.OnRequestPermissionsRe
                 BluetoothDevice bluetoothDevice = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
 
                 if (state == BluetoothDevice.BOND_BONDED && prevState == BluetoothDevice.BOND_BONDING) {
-                    bluetoothStatus.postValue(ACTION_BOND_STATE_BONDED);
 
+                    bluetoothStatus.postValue(ACTION_BOND_STATE_BONDED);
+                    if( BluetoothConnector.this.action.hashCode() == Action.LINKING_DEVICE.hashCode() ){
+
+                        linkDevice.setValue(bluetoothDevice);
+                        DEVICE_BONDED = true;
+                    }
                     if( BONDING_DEVICE ){
 
                         BONDING_DEVICE = false;
-                        BONDED_DEVICE = true;
 
                         if( SENDING_DATA ){
                             SENDING_DATA = false;
@@ -570,6 +594,7 @@ public class BluetoothConnector implements ActivityCompat.OnRequestPermissionsRe
                 }
 
             }
+
             else if( BluetoothAdapter.ACTION_DISCOVERY_STARTED.equals(action) ){
 
                 bluetoothDevicesList.clear();
@@ -580,10 +605,11 @@ public class BluetoothConnector implements ActivityCompat.OnRequestPermissionsRe
 
                 bluetoothStatus.postValue(ACTION_DISCOVERY_FINISHED);
 
-                if( action.hashCode() == Action.FINDING_DEVICE.hashCode() ){
+                if( action.hashCode() == Action.SEARCHING_DEVICE.hashCode() ){
 
-                    FINDING_DEVICES = false;
+
                     if( !BLUETOOTH_DEVICE_FOUND ){
+                        BLUETOOTH_DEVICE_FOUND = false;
                         bluetoothDevice.postValue(null);
                     }
 
@@ -751,6 +777,7 @@ public class BluetoothConnector implements ActivityCompat.OnRequestPermissionsRe
 
                         bluetoothSocket = bluetoothDevice.createRfcommSocketToServiceRecord(uuid);
                         Looper.prepare();
+
                         bluetoothSocket.connect();
 
                         if( bluetoothSocket.isConnected() ){
