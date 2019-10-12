@@ -341,7 +341,7 @@ public class BluetoothConnector implements ActivityCompat.OnRequestPermissionsRe
     /*
         EMPAREJAMIENTO Y DESEMPAREJAMIENTO DE DISPOSITIVOS BLUETOOTH
      */
-    private void linkBluetoothDevice(BluetoothDevice bluetoothDevice){
+    public void linkBluetoothDevice(BluetoothDevice bluetoothDevice){
 
         try {
             Method method = bluetoothDevice.getClass().getMethod("createBond",(Class[]) null);
@@ -351,7 +351,7 @@ public class BluetoothConnector implements ActivityCompat.OnRequestPermissionsRe
         }
 
     }
-    private void unlinkBluetoothDevice( BluetoothDevice bluetoothDevice ){
+    public void unlinkBluetoothDevice( BluetoothDevice bluetoothDevice ){
 
         try {
             Method method = bluetoothDevice.getClass().getMethod("removeBond",(Class[]) null);
@@ -366,7 +366,7 @@ public class BluetoothConnector implements ActivityCompat.OnRequestPermissionsRe
         BUSQUEDA DE DISPOSITOS BLUETOOTH
      */
 
-    private MutableLiveData<BluetoothDevice> findBluetoothDevice(final String macAddress){
+    public MutableLiveData<BluetoothDevice> findBluetoothDevice(final String macAddress){
 
         final boolean[] found = {false};
         final BluetoothDevice[] b = {null};
@@ -498,13 +498,13 @@ public class BluetoothConnector implements ActivityCompat.OnRequestPermissionsRe
 
                     if( filters.size() == 0){
                         bluetoothDevicesList.add(device);
-                        bluetoothDevice.postValue(device);
+                        bluetoothDevice.setValue(device);
                     }
                     else{
 
                         if( hasFilter(device) ){
                             bluetoothDevicesList.add(device);
-                            bluetoothDevice.postValue(device);
+                            bluetoothDevice.setValue(device);
                         }
 
                     }
