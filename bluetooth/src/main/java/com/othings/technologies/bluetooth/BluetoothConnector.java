@@ -507,43 +507,48 @@ public class BluetoothConnector implements ActivityCompat.OnRequestPermissionsRe
 
                 BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
 
-                if( BluetoothConnector.this.action.hashCode() == Action.SEARCHING_DEVICE.hashCode() ){
+                if(  BluetoothConnector.this.action != null ){
 
-                    if( MAC_ADDRESS.equals(device.getAddress()) ){
-                        BLUETOOTH_DEVICE_FOUND = true;
-                        bluetoothStatus.postValue(ACTION_FOUND);
-                        bluetoothDevice.setValue(device);
-                        bluetoothAdapter.cancelDiscovery();
-                    }
+                    if( BluetoothConnector.this.action.hashCode() == Action.SEARCHING_DEVICE.hashCode() ){
 
-                }
-                else if(  BluetoothConnector.this.action.hashCode() == Action.FILTERING_DEVICES.hashCode() || action.hashCode() == Action.SCANNING_DEVICES.hashCode() ){
-
-                    if( !existBluetoothDeviceOnList(device) ){
-
-                        if( filters.size() == 0){
+                        if( MAC_ADDRESS.equals(device.getAddress()) ){
+                            BLUETOOTH_DEVICE_FOUND = true;
                             bluetoothStatus.postValue(ACTION_FOUND);
-                            bluetoothDevicesList.add(device);
-                            bluetoothDevices.setValue(device);
+                            bluetoothDevice.setValue(device);
+                            bluetoothAdapter.cancelDiscovery();
                         }
-                        else{
 
-                            if( hasFilter(device) ){
+                    }
+                    else if(  BluetoothConnector.this.action.hashCode() == Action.FILTERING_DEVICES.hashCode() || action.hashCode() == Action.SCANNING_DEVICES.hashCode() ){
+
+                        if( !existBluetoothDeviceOnList(device) ){
+
+                            if( filters.size() == 0){
                                 bluetoothStatus.postValue(ACTION_FOUND);
                                 bluetoothDevicesList.add(device);
                                 bluetoothDevices.setValue(device);
+                            }
+                            else{
+
+                                if( hasFilter(device) ){
+                                    bluetoothStatus.postValue(ACTION_FOUND);
+                                    bluetoothDevicesList.add(device);
+                                    bluetoothDevices.setValue(device);
+                                }
+
                             }
 
                         }
 
                     }
+                    else{
+
+                        bluetoothDevices.postValue(device);
+
+                    }
 
                 }
-                else{
 
-                    bluetoothDevices.postValue(device);
-
-                }
 
             }
             else if( BluetoothDevice.ACTION_PAIRING_REQUEST.equals(action) ){
@@ -605,15 +610,20 @@ public class BluetoothConnector implements ActivityCompat.OnRequestPermissionsRe
 
                 bluetoothStatus.postValue(ACTION_DISCOVERY_FINISHED);
 
-                if( action.hashCode() == Action.SEARCHING_DEVICE.hashCode() ){
+                if( BluetoothConnector.this.action != null ){
+
+                    if( BluetoothConnector.this.action.hashCode() == Action.SEARCHING_DEVICE.hashCode() ){
 
 
-                    if( !BLUETOOTH_DEVICE_FOUND ){
-                        BLUETOOTH_DEVICE_FOUND = false;
-                        bluetoothDevice.postValue(null);
+                        if( !BLUETOOTH_DEVICE_FOUND ){
+                            BLUETOOTH_DEVICE_FOUND = false;
+                            bluetoothDevice.postValue(null);
+                        }
+
                     }
 
                 }
+
 
                 action = null;
 
