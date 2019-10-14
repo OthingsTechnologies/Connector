@@ -578,11 +578,8 @@ public class BluetoothConnector implements ActivityCompat.OnRequestPermissionsRe
                 if (state == BluetoothDevice.BOND_BONDED && prevState == BluetoothDevice.BOND_BONDING) {
 
                     bluetoothStatus.postValue(ACTION_BOND_STATE_BONDED);
-                    if( BluetoothConnector.this.action.hashCode() == Action.LINKING_DEVICE.hashCode() ){
-
-                        linkDevice.setValue(bluetoothDevice);
-                        DEVICE_BONDED = true;
-                    }
+                    linkDevice.setValue(bluetoothDevice);
+                    DEVICE_BONDED = true;
                     if( BONDING_DEVICE ){
 
                         BONDING_DEVICE = false;
