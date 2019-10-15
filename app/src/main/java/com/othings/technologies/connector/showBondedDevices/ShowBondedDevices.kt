@@ -9,7 +9,6 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.snackbar.Snackbar
-import com.othings.technologies.bluetooth.BluetoothConnector
 import com.othings.technologies.connector.R
 import com.othings.technologies.connector.databinding.ActivityShowBondedDevicesBinding
 import com.othings.technologies.connector.showBondedDevices.adapters.BluetoothDeviceAdapter
@@ -20,7 +19,7 @@ class ShowBondedDevices : AppCompatActivity() {
     private lateinit var binding: ActivityShowBondedDevicesBinding
     private lateinit var adapter:BluetoothDeviceAdapter
     private lateinit var bluetoothDevices:MutableList<BluetoothDevice>
-    private lateinit var bluetoothConnector: BluetoothConnector
+    //private lateinit var bluetoothConnector: BluetoothConnector
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -29,24 +28,24 @@ class ShowBondedDevices : AppCompatActivity() {
         binding.lifecycleOwner = this
         model = ViewModelProviders.of(this).get(ShowBondedDevicesViewModel::class.java)
         binding.viewmodel = model
-        bluetoothConnector = BluetoothConnector(this,this)
+       // bluetoothConnector = BluetoothConnector(this,this)
 
-       bluetoothConnector.pairedDevices.observe(this,Observer<MutableList<BluetoothDevice>>{result->
+     /*  bluetoothConnector.pairedDevices.observe(this,Observer<MutableList<BluetoothDevice>>{result->
 
            bluetoothDevices = result
            adapter = BluetoothDeviceAdapter(bluetoothDevices)
            binding.recyclerview.layoutManager = LinearLayoutManager(this)
            binding.recyclerview.adapter = adapter
 
-        })
+        })*/
 
 
 
-        bluetoothConnector.bluetoothStatus.observe(this,Observer<String>{ status ->
+       /* bluetoothConnector.bluetoothStatus.observe(this,Observer<String>{ status ->
 
             Snackbar.make(binding.contextView,status,Snackbar.LENGTH_SHORT).show()
 
-        })
+        })*/
 
     }
 
@@ -56,12 +55,12 @@ class ShowBondedDevices : AppCompatActivity() {
         grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        bluetoothConnector.onRequestPermissionsResult(requestCode,permissions,grantResults)
+       // bluetoothConnector.onRequestPermissionsResult(requestCode,permissions,grantResults)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        bluetoothConnector.onActivityResult(requestCode,resultCode,data)
+      //  bluetoothConnector.onActivityResult(requestCode,resultCode,data)
     }
 
     override fun onSupportNavigateUp(): Boolean {

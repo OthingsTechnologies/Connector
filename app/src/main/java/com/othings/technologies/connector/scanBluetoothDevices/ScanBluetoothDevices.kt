@@ -9,7 +9,9 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.snackbar.Snackbar
-import com.othings.technologies.bluetooth.BluetoothConnector
+import com.othings.technologies.bluetooth.Bluetooth
+import com.othings.technologies.bluetooth.bluetoothCommunication.BluetoothClient
+import com.othings.technologies.bluetooth.bluetoothScanning.BluetoothFilter
 import com.othings.technologies.connector.R
 import com.othings.technologies.connector.databinding.ActivityScanBluetoothDevicesBinding
 import com.othings.technologies.connector.showBondedDevices.adapters.BluetoothDeviceAdapter
@@ -20,21 +22,43 @@ class ScanBluetoothDevices : AppCompatActivity() {
     private lateinit var binding:ActivityScanBluetoothDevicesBinding
     private lateinit var adapter:BluetoothDeviceAdapter
     private lateinit var bluetoothDevices :MutableList<BluetoothDevice>
-    private lateinit var connector: BluetoothConnector
+    //private lateinit var connector: BluetoothConnector
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         viewmodel = ViewModelProviders.of(this).get(ScanBluetoothDevicesViewModel::class.java)
-        binding = DataBindingUtil.setContentView(this,R.layout.activity_scan_bluetooth_devices)
+        binding = DataBindingUtil.setContentView(this, R.layout.activity_scan_bluetooth_devices)
 
-        connector = BluetoothConnector(this,this)
         bluetoothDevices = ArrayList()
         adapter = BluetoothDeviceAdapter(bluetoothDevices)
         binding.recyclerview.layoutManager = LinearLayoutManager(this)
         binding.recyclerview.adapter = adapter
 
-        connector.bluetoothStatus.observe(this,Observer<String>{ status ->
+        var bluetooth: Bluetooth = Bluetooth(this);
+
+        bluetooth.scanning.getFilteredDevices(BluetoothFilter.PRINTERS)
+            .observe(this, Observer<BluetoothDevice> { bluetoothDevice ->
+
+
+            })
+
+        bluetooth.scanning.getDevice("asdasdasdasdas")
+            .observe(this, Observer<BluetoothDevice> { bluetoothDevice ->
+
+                bluetooth.client.request(bluetoothDevice, "asdadadasd".toByteArray(), this)
+                    .observe(this, Observer<String> { response ->
+
+                        if (response == BluetoothClient.REQUEST_OK) {
+
+                        }
+
+                    })
+
+            })
+
+
+        /*connector.bluetoothStatus.observe(this,Observer<String>{ status ->
 
             Snackbar.make(binding.contextView,status, Snackbar.LENGTH_SHORT).show()
 
@@ -45,26 +69,26 @@ class ScanBluetoothDevices : AppCompatActivity() {
             bluetoothDevices.add(bluetoothDevice)
             adapter.notifyDataSetChanged()
 
-        })
+        })*/
 
-        adapter.setOnClickItemListener().observe(this,Observer<Int>{ position ->
+        adapter.setOnClickItemListener().observe(this, Observer<Int> { position ->
 
             var bluetoothDevice = bluetoothDevices.get(position)
 
-            connector.findBluetoothDevice(bluetoothDevice.address).observe(this,Observer<BluetoothDevice>{bluetoothDevice->
+            /* connector.findBluetoothDevice(bluetoothDevice.address).observe(this,Observer<BluetoothDevice>{bluetoothDevice->
 
                 var b = bluetoothDevice;
                 connector.linkBluetoothDevice(b).observe(this,Observer<BluetoothDevice>{linkedDevice->
 
                     var asds ="asdasd"
 
-                });
+                });*/
 
 
-            })
+        })
 
 
-           /* var data = "^XA\n" +
+        /* var data = "^XA\n" +
                     "\n" +
                     "^FX Top section with company logo, name and address.\n" +
                     "^CF0,60\n" +
@@ -112,7 +136,7 @@ class ScanBluetoothDevices : AppCompatActivity() {
 
             })*/
 
-        })
+        /*       })
 
 
         connector.handleErrors().observe(this, Observer<Throwable> {error->
@@ -143,5 +167,8 @@ class ScanBluetoothDevices : AppCompatActivity() {
     override fun onDestroy() {
         connector.onDestroy()
         super.onDestroy()
+    }*/
+
+
     }
 }

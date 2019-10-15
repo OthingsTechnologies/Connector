@@ -4,10 +4,7 @@ import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import androidx.databinding.DataBindingUtil
-import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProviders
-import com.othings.technologies.bluetooth.BluetoothConnector
 import com.othings.technologies.connector.databinding.ActivityMainBinding
 import com.othings.technologies.connector.scanBluetoothDevices.ScanBluetoothDevices
 import com.othings.technologies.connector.showBondedDevices.ShowBondedDevices
