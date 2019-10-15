@@ -1,10 +1,9 @@
 package com.othings.technologies.bluetooth;
 
 import android.annotation.SuppressLint;
-import android.bluetooth.BluetoothA2dp;
+
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
 import android.content.BroadcastReceiver;
@@ -14,16 +13,15 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.os.Handler;
 import android.os.Looper;
-
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleOwner;
+import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.Observer;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -77,6 +75,9 @@ public class BluetoothConnector implements ActivityCompat.OnRequestPermissionsRe
     public static final String ACTION_BOND_STATE_BONDED_NONE = "ACTION_BOND_STATE_BONDED_NONE";
     public static final String ACTION_DISCOVERY_STARTED = "ACTION_DISCOVERY_STARTED";
     public static final String ACTION_DISCOVERY_FINISHED = "ACTION_DISCOVERY_FINISHED";
+
+    public static final String DATA_SENDED_OK = "DATA_SENDED_OK";
+    public static final String DATA_SENDED_FAILED = "DATA_SENDED_FAILED";
 
     /*
         FILTERING
@@ -395,6 +396,9 @@ public class BluetoothConnector implements ActivityCompat.OnRequestPermissionsRe
                         if(found[0]){
 
                             bluetoothDevice.postValue(b[0]);
+                            if(bluetoothDevice.hasActiveObservers()){
+                                bluetoothDevice.removeObservers(lifecycleOwner);
+                            }
 
                         }
                         else{
@@ -796,19 +800,18 @@ public class BluetoothConnector implements ActivityCompat.OnRequestPermissionsRe
                             bluetoothSocket.close();
                             Looper.myLooper().quit();
 
-                            BluetoothConnector.this.bluetoothResponses.postValue("OK");
+                            BluetoothConnector.this.bluetoothResponses.postValue(DATA_SENDED_OK);
 
 
                         }else{
-
                             handleErrors.postValue(new Throwable(REFUSED_CONNECTION));
-
+                            BluetoothConnector.this.bluetoothResponses.postValue(DATA_SENDED_FAILED);
                         }
 
                     } catch (Exception e) {
                         handleErrors.postValue(e);
+                        BluetoothConnector.this.bluetoothResponses.postValue(DATA_SENDED_FAILED);
                     }
-
 
                 }
             });
