@@ -13,10 +13,23 @@
         android:layout_height="match_parent"
         tools:context=".scanBluetoothDevices.ScanBluetoothDevices">
 
+
+
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recyclerview"
             android:layout_width="match_parent"
             android:layout_height="match_parent"/>
+
+        <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+            android:id="@+id/searchDevices"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:backgroundTint="@color/colorPrimary"
+            android:textColor="@color/colorPrimaryText"
+            android:layout_margin="10dp"
+            android:text="Buscar"
+            app:layout_constraintBottom_toBottomOf="@+id/recyclerview"
+            app:layout_constraintEnd_toEndOf="parent" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

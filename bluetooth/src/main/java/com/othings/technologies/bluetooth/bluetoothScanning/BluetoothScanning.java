@@ -6,11 +6,15 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.Handler;
+import android.preference.PreferenceManager;
+
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.MutableLiveData;
 import java.util.ArrayList;
 import java.util.List;
 
-public class BluetoothScanning {
+public class BluetoothScanning implements PreferenceManager.OnActivityResultListener {
 
     private Context context;
     private BluetoothAdapter bluetoothAdapter;
@@ -19,10 +23,13 @@ public class BluetoothScanning {
     private MutableLiveData<BluetoothDevice> device;
     private BluetoothFilter bluetoothFilter;
     private BluetoothAction bluetoothAction;
+    private BluetoothMethod bluetoothMethod;
     private BluetoothDevice bluetoothDevice;
     private String macAddress;
+    private int timeOut;
     private List<BluetoothDevice> bluetoothDevices;
     private MutableLiveData<String> status;
+    public static final int TURN_ON_BLUETOOTH_REQUEST_CODE = 3000;
 
     public BluetoothScanning(Context context){
 
@@ -41,24 +48,96 @@ public class BluetoothScanning {
         device = new MutableLiveData<>();
 
     }
-
     public MutableLiveData<BluetoothDevice> getDevice( String macAddress ){
+        bluetoothMethod = BluetoothMethod.GET_DEVICE;
+        this.macAddress = macAddress;
+        if( bluetoothAdapter.isEnabled() ){
 
-        status.setValue(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
-        boolean found = false;
-        for( BluetoothDevice bluetoothDevice : bluetoothAdapter.getBondedDevices() ){
-            if( bluetoothDevice.getAddress().equals(macAddress) ){
-                found = true;
-                device.setValue(bluetoothDevice);
-                status.setValue(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
+            status.setValue(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
+            boolean found = false;
+            for( BluetoothDevice bluetoothDevice : bluetoothAdapter.getBondedDevices() ){
+                if( bluetoothDevice.getAddress().equals(macAddress) ){
+                    found = true;
+                    device.setValue(bluetoothDevice);
+                    status.setValue(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
+                }
             }
+
+            if( !found ){
+
+                bluetoothDevices.clear();
+                bluetoothAction = BluetoothAction.FIND_DEVICE;
+
+                if( bluetoothAdapter.isDiscovering() ){
+                    bluetoothAdapter.cancelDiscovery();
+                }
+
+                bluetoothAdapter.startDiscovery();
+
+            }
+
+        }
+        else{
+
+            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            ((AppCompatActivity) context).startActivityForResult(enableBtIntent, TURN_ON_BLUETOOTH_REQUEST_CODE);
+
         }
 
-        if( !found ){
+        return device;
+    }
+    public MutableLiveData<BluetoothDevice> getDevice( String macAddress ,int timeout ){
+        bluetoothMethod = BluetoothMethod.GET_DEVICE_WITH_TIMEOUT;
+        this.macAddress = macAddress;
+        this.timeOut = timeout;
+        if( bluetoothAdapter.isEnabled() ){
 
-            this.macAddress = macAddress;
-            bluetoothDevices.clear();
-            bluetoothAction = BluetoothAction.FIND_DEVICE;
+            status.setValue(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
+            boolean found = false;
+            for( BluetoothDevice bluetoothDevice : bluetoothAdapter.getBondedDevices() ){
+                if( bluetoothDevice.getAddress().equals(macAddress) ){
+                    found = true;
+                    device.setValue(bluetoothDevice);
+                    status.setValue(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
+                }
+            }
+
+            if( !found ){
+
+
+                bluetoothDevices.clear();
+                bluetoothAction = BluetoothAction.FIND_DEVICE;
+
+                if( bluetoothAdapter.isDiscovering() ){
+                    bluetoothAdapter.cancelDiscovery();
+                }
+
+                bluetoothAdapter.startDiscovery();
+
+                new Handler().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        bluetoothAdapter.cancelDiscovery();
+                    }
+                },timeout);
+
+            }
+
+        }
+        else{
+
+            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            ((AppCompatActivity) context).startActivityForResult(enableBtIntent, TURN_ON_BLUETOOTH_REQUEST_CODE);
+
+        }
+
+        return device;
+    }
+    public MutableLiveData<BluetoothDevice> getAllDevices() {
+        bluetoothMethod = BluetoothMethod.GET_ALL_DEVICES;
+        bluetoothAction = BluetoothAction.SCAN_DEVICES;
+
+        if( bluetoothAdapter.isEnabled() ){
 
             if( bluetoothAdapter.isDiscovering() ){
                 bluetoothAdapter.cancelDiscovery();
@@ -67,28 +146,98 @@ public class BluetoothScanning {
             bluetoothAdapter.startDiscovery();
 
         }
+        else{
 
-        return device;
-    }
-    public MutableLiveData<BluetoothDevice> getDevices() {
+            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            ((AppCompatActivity) context).startActivityForResult(enableBtIntent, TURN_ON_BLUETOOTH_REQUEST_CODE);
 
-        bluetoothAction = BluetoothAction.SCAN_DEVICES;
-        if( bluetoothAdapter.isDiscovering() ){
-            bluetoothAdapter.cancelDiscovery();
         }
 
-        bluetoothAdapter.startDiscovery();
+        return devices;
+    }
+    public MutableLiveData<BluetoothDevice> getAllDevices(int timeout) {
+        this.timeOut = timeout;
+        bluetoothMethod = BluetoothMethod.GET_ALL_DEVICES_WITH_TIMEOUT;
+        bluetoothAction = BluetoothAction.SCAN_DEVICES;
+
+        if( bluetoothAdapter.isEnabled() ){
+
+            if( bluetoothAdapter.isDiscovering() ){
+                bluetoothAdapter.cancelDiscovery();
+            }
+
+            bluetoothAdapter.startDiscovery();
+
+            new Handler().postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    bluetoothAdapter.cancelDiscovery();
+                }
+            },timeout);
+
+        }
+        else{
+
+            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            ((AppCompatActivity) context).startActivityForResult(enableBtIntent, TURN_ON_BLUETOOTH_REQUEST_CODE);
+
+        }
+
+
+
         return devices;
     }
     public MutableLiveData<BluetoothDevice> getFilteredDevices( BluetoothFilter filter ) {
-
+        bluetoothMethod = BluetoothMethod.GET_FILTERED_DEVICES;
         this.bluetoothFilter = filter;
         bluetoothAction = BluetoothAction.SCAN_DEVICES;
-        if( bluetoothAdapter.isDiscovering() ){
-            bluetoothAdapter.cancelDiscovery();
+
+        if( bluetoothAdapter.isEnabled() ){
+
+            if( bluetoothAdapter.isDiscovering() ){
+                bluetoothAdapter.cancelDiscovery();
+            }
+
+            bluetoothAdapter.startDiscovery();
+
+        }
+        else{
+
+            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            ((AppCompatActivity) context).startActivityForResult(enableBtIntent, TURN_ON_BLUETOOTH_REQUEST_CODE);
+
         }
 
-        bluetoothAdapter.startDiscovery();
+        return devicesWithFilter;
+    }
+    public MutableLiveData<BluetoothDevice> getFilteredDevices( BluetoothFilter filter ,int timeout) {
+        bluetoothMethod = BluetoothMethod.GET_FILTERED_DEVICE_WITH_TIMEOUT;
+        this.bluetoothFilter = filter;
+        this.timeOut = timeout;
+        bluetoothAction = BluetoothAction.SCAN_DEVICES;
+        if( bluetoothAdapter.isEnabled() ){
+
+            if( bluetoothAdapter.isDiscovering() ){
+                bluetoothAdapter.cancelDiscovery();
+            }
+
+            bluetoothAdapter.startDiscovery();
+
+            new Handler().postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    bluetoothAdapter.cancelDiscovery();
+                }
+            },timeout);
+
+        }
+        else{
+
+            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            ((AppCompatActivity) context).startActivityForResult(enableBtIntent, TURN_ON_BLUETOOTH_REQUEST_CODE);
+
+        }
+
         return devicesWithFilter;
     }
     private boolean hasDevice( BluetoothDevice bluetoothDevice ){
@@ -178,4 +327,53 @@ public class BluetoothScanning {
 
         }
     };
+
+    @Override
+    public boolean onActivityResult(int requestCode, int resultCode, Intent data) {
+
+        if( requestCode == TURN_ON_BLUETOOTH_REQUEST_CODE ){
+
+            if( bluetoothAdapter.isEnabled() ){
+
+                    switch (bluetoothMethod){
+
+                        case GET_DEVICE:{
+                            getDevice(macAddress);
+                            break;
+                        }
+                        case GET_DEVICE_WITH_TIMEOUT:{
+                            getDevice(macAddress,timeOut);
+                            break;
+                        }
+                        case GET_ALL_DEVICES:{
+                            getAllDevices();
+                            break;
+                        }
+                        case GET_ALL_DEVICES_WITH_TIMEOUT:{
+                            getAllDevices(timeOut);
+                            break;
+                        }
+                        case GET_FILTERED_DEVICES:{
+                            getFilteredDevices(bluetoothFilter);
+                            break;
+                        }
+                        case GET_FILTERED_DEVICE_WITH_TIMEOUT:{
+                            getFilteredDevices(bluetoothFilter,timeOut);
+                            break;
+                        }
+
+                    }
+
+            }
+            else{
+
+                Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+                ((AppCompatActivity) context).startActivityForResult(enableBtIntent, TURN_ON_BLUETOOTH_REQUEST_CODE);
+
+            }
+
+        }
+
+        return false;
+    }
 }

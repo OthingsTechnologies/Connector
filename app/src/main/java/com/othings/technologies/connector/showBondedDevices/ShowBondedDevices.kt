@@ -28,7 +28,7 @@ class ShowBondedDevices : AppCompatActivity() {
         binding.lifecycleOwner = this
         model = ViewModelProviders.of(this).get(ShowBondedDevicesViewModel::class.java)
         binding.viewmodel = model
-       // bluetoothConnector = BluetoothConnector(this,this)
+
 
      /*  bluetoothConnector.pairedDevices.observe(this,Observer<MutableList<BluetoothDevice>>{result->
 

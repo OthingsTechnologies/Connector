@@ -10,6 +10,7 @@ import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.snackbar.Snackbar
 import com.othings.technologies.bluetooth.Bluetooth
+import com.othings.technologies.bluetooth.bluetoothBond.BluetoothBondState
 import com.othings.technologies.bluetooth.bluetoothCommunication.BluetoothClient
 import com.othings.technologies.bluetooth.bluetoothScanning.BluetoothFilter
 import com.othings.technologies.connector.R
@@ -22,7 +23,9 @@ class ScanBluetoothDevices : AppCompatActivity() {
     private lateinit var binding:ActivityScanBluetoothDevicesBinding
     private lateinit var adapter:BluetoothDeviceAdapter
     private lateinit var bluetoothDevices :MutableList<BluetoothDevice>
-    //private lateinit var connector: BluetoothConnector
+    private lateinit var bluetooth: Bluetooth
+    private lateinit var observer:Observer<BluetoothDevice>
+    private lateinit var sendDataObserver:Observer<String>
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
@@ -35,128 +38,55 @@ class ScanBluetoothDevices : AppCompatActivity() {
         binding.recyclerview.layoutManager = LinearLayoutManager(this)
         binding.recyclerview.adapter = adapter
 
-        var bluetooth: Bluetooth = Bluetooth(this);
+        bluetooth = Bluetooth(this);
 
-        bluetooth.scanning.getFilteredDevices(BluetoothFilter.PRINTERS)
-            .observe(this, Observer<BluetoothDevice> { bluetoothDevice ->
+        observer = Observer<BluetoothDevice>{bluetoothDevice->
 
-
-            })
-
-        bluetooth.scanning.getDevice("asdasdasdasdas")
-            .observe(this, Observer<BluetoothDevice> { bluetoothDevice ->
-
-                bluetooth.client.request(bluetoothDevice, "asdadadasd".toByteArray(), this)
-                    .observe(this, Observer<String> { response ->
-
-                        if (response == BluetoothClient.REQUEST_OK) {
-
-                        }
-
-                    })
-
-            })
-
-
-        /*connector.bluetoothStatus.observe(this,Observer<String>{ status ->
-
-            Snackbar.make(binding.contextView,status, Snackbar.LENGTH_SHORT).show()
-
-        })
-
-        connector.scanBluetoothDevicesWithFiltersAndTimeOut(10000,BluetoothConnector.FILTER_ONLY_PRINTERS).observe(this, Observer<BluetoothDevice>{ bluetoothDevice ->
-
+            bluetoothDevices.clear()
             bluetoothDevices.add(bluetoothDevice)
             adapter.notifyDataSetChanged()
 
-        })*/
+        }
+
+        sendDataObserver = Observer<String>{status->
+
+            Snackbar.make(binding.contextView,status,Snackbar.LENGTH_SHORT).show()
+
+        }
+
+
+        bluetooth.scanning.getFilteredDevices(BluetoothFilter.PRINTERS,10000).observe(this, observer)
 
         adapter.setOnClickItemListener().observe(this, Observer<Int> { position ->
 
             var bluetoothDevice = bluetoothDevices.get(position)
-
-            /* connector.findBluetoothDevice(bluetoothDevice.address).observe(this,Observer<BluetoothDevice>{bluetoothDevice->
-
-                var b = bluetoothDevice;
-                connector.linkBluetoothDevice(b).observe(this,Observer<BluetoothDevice>{linkedDevice->
-
-                    var asds ="asdasd"
-
-                });*/
+            bluetooth.client.request(bluetoothDevice,"test chido".toByteArray(),this).observe(this,sendDataObserver)
 
 
         })
 
+        binding.searchDevices.setOnClickListener {
 
-        /* var data = "^XA\n" +
-                    "\n" +
-                    "^FX Top section with company logo, name and address.\n" +
-                    "^CF0,60\n" +
-                    "^FO50,50^GB100,100,100^FS\n" +
-                    "^FO75,75^FR^GB100,100,100^FS\n" +
-                    "^FO88,88^GB50,50,50^FS\n" +
-                    "^FO220,50^FDIntershipping, Inc.^FS\n" +
-                    "^CF0,30\n" +
-                    "^FO220,115^FD1000 Shipping Lane^FS\n" +
-                    "^FO220,155^FDShelbyville TN 38102^FS\n" +
-                    "^FO220,195^FDUnited States (USA)^FS\n" +
-                    "^FO50,250^GB700,1,3^FS\n" +
-                    "\n" +
-                    "^FX Second section with recipient address and permit information.\n" +
-                    "^CFA,30\n" +
-                    "^FO50,300^FDJohn Doe^FS\n" +
-                    "^FO50,340^FD100 Main Street^FS\n" +
-                    "^FO50,380^FDSpringfield TN 39021^FS\n" +
-                    "^FO50,420^FDUnited States (USA)^FS\n" +
-                    "^CFA,15\n" +
-                    "^FO600,300^GB150,150,3^FS\n" +
-                    "^FO638,340^FDPermit^FS\n" +
-                    "^FO638,390^FD123456^FS\n" +
-                    "^FO50,500^GB700,1,3^FS\n" +
-                    "\n" +
-                    "^FX Third section with barcode.\n" +
-                    "^BY5,2,270\n" +
-                    "^FO100,550^BC^FD12345678^FS\n" +
-                    "\n" +
-                    "^FX Fourth section (the two boxes on the bottom).\n" +
-                    "^FO50,900^GB700,250,3^FS\n" +
-                    "^FO400,900^GB1,250,3^FS\n" +
-                    "^CF0,40\n" +
-                    "^FO100,960^FDCtr. X34B-1^FS\n" +
-                    "^FO100,1010^FDREF1 F00B47^FS\n" +
-                    "^FO100,1060^FDREF2 BL4H8^FS\n" +
-                    "^CF0,190\n" +
-                    "^FO470,955^FDCA^FS\n" +
-                    "\n" +
-                    "^XZ"
+            bluetoothDevices.clear()
+            adapter.notifyDataSetChanged()
+            bluetooth.scanning.getFilteredDevices(BluetoothFilter.PRINTERS,10000).observe(this, observer)
 
-            connector.sendData(bluetoothDevice,data.toByteArray()).observe(this,Observer<String>{ data->
-
-                Snackbar.make(binding.contextView,data, Snackbar.LENGTH_SHORT).show()
-
-            })*/
-
-        /*       })
-
-
-        connector.handleErrors().observe(this, Observer<Throwable> {error->
-
-            Snackbar.make(binding.contextView,error.message.toString(), Snackbar.LENGTH_SHORT).show()
-
-        })
-
+        }
 
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        connector.onActivityResult(requestCode,resultCode,data)
+        bluetooth.onActivityResult(requestCode,resultCode,data)
     }
 
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        connector.onRequestPermissionsResult(requestCode,permissions,grantResults)
-
+        bluetooth.onRequestPermissionsResult(requestCode,permissions,grantResults)
     }
 
     override fun onSupportNavigateUp(): Boolean {
@@ -164,11 +94,4 @@ class ScanBluetoothDevices : AppCompatActivity() {
         return super.onSupportNavigateUp()
     }
 
-    override fun onDestroy() {
-        connector.onDestroy()
-        super.onDestroy()
-    }*/
-
-
-    }
 }
