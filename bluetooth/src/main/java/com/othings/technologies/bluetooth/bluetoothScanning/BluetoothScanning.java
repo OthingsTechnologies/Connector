@@ -29,7 +29,10 @@ public class BluetoothScanning implements PreferenceManager.OnActivityResultList
     private int timeOut;
     private List<BluetoothDevice> bluetoothDevices;
     private MutableLiveData<String> status;
-    public static final int TURN_ON_BLUETOOTH_REQUEST_CODE = 3000;
+    private static final int TURN_ON_BLUETOOTH_REQUEST_CODE = 3000;
+    public static final String BLUETOOTH_STATE_ON = "BLUETOOTH_STATE_ON";
+    public static final String BLUETOOTH_STATE_OFF = "BLUETOOTH_STATE_OFF";
+
 
     public BluetoothScanning(Context context){
 
@@ -40,6 +43,8 @@ public class BluetoothScanning implements PreferenceManager.OnActivityResultList
         filter = new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
         context.registerReceiver(broadcastReceiver, filter);
         filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+        context.registerReceiver(broadcastReceiver, filter);
+        filter = new IntentFilter(BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED);
         context.registerReceiver(broadcastReceiver, filter);
         bluetoothDevices = new ArrayList<>();
         status = new MutableLiveData<>();
@@ -240,7 +245,10 @@ public class BluetoothScanning implements PreferenceManager.OnActivityResultList
 
         return devicesWithFilter;
     }
-    private boolean hasDevice( BluetoothDevice bluetoothDevice ){
+    public MutableLiveData<String> getStatus() {
+        return status;
+    }
+    private boolean hasDevice(BluetoothDevice bluetoothDevice ){
 
         for( BluetoothDevice device : bluetoothDevices ){
 
@@ -318,6 +326,17 @@ public class BluetoothScanning implements PreferenceManager.OnActivityResultList
                     bluetoothAction = null;
                     BluetoothScanning.this.bluetoothDevice = null;
                     bluetoothDevices.clear();
+
+                    break;
+                }
+                case BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED:{
+
+                    if( bluetoothAdapter.getState() == BluetoothAdapter.STATE_ON ){
+                        status.setValue(BLUETOOTH_STATE_ON);
+                    }
+                    else if( bluetoothAdapter.getState() == BluetoothAdapter.STATE_OFF ){
+                        status.setValue(BLUETOOTH_STATE_OFF);
+                    }
 
                     break;
                 }
