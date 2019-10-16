@@ -16,6 +16,7 @@ import com.othings.technologies.bluetooth.bluetoothBond.BluetoothBond;
 import com.othings.technologies.bluetooth.bluetoothBond.BluetoothBondState;
 import com.othings.technologies.bluetooth.bluetoothScanning.BluetoothScanning;
 
+import java.io.IOException;
 import java.io.OutputStream;
 import java.util.UUID;
 
@@ -94,7 +95,13 @@ public class BluetoothClient implements PreferenceManager.OnActivityResultListen
 
                             }catch (Exception e){
 
-                                requestStatus.postValue(e.getMessage());
+                                if( e instanceof IOException ){
+                                    requestStatus.postValue("El dispositivo esta apagado y no fue posible conectar , verifique y vuelva a intentarlo.");
+                                }
+                                else{
+                                    requestStatus.postValue(e.getMessage());
+                                }
+
 
                             }
 

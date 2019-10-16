@@ -42,7 +42,6 @@ class ScanBluetoothDevices : AppCompatActivity() {
 
         observer = Observer<BluetoothDevice>{bluetoothDevice->
 
-            bluetoothDevices.clear()
             bluetoothDevices.add(bluetoothDevice)
             adapter.notifyDataSetChanged()
 
