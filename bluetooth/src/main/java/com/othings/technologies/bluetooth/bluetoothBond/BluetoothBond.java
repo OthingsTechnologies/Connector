@@ -33,6 +33,7 @@ public class BluetoothBond implements PreferenceManager.OnActivityResultListener
         context.registerReceiver(broadcastReceiver, filter);
         filter = new IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
         context.registerReceiver(broadcastReceiver, filter);
+        context.registerReceiver(broadcastReceiver, filter);
 
     }
 
@@ -86,14 +87,16 @@ public class BluetoothBond implements PreferenceManager.OnActivityResultListener
 
                 case BluetoothDevice.ACTION_PAIRING_REQUEST:{
 
+                    final BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                    device.setPin("1234".getBytes());
                     new Handler().postDelayed(new Runnable() {
                         @Override
                         public void run() {
 
                             if( bluetoothDevice != null ){
                                 if( bluetoothDevice.getBondState() != BluetoothDevice.BOND_BONDED ){
-                                    bluetoothDevice = null;
-                                    bondDevice.setValue(null);
+                                    BluetoothBondState bluetoothBondState = new BluetoothBondState(device,BluetoothDevice.BOND_NONE);
+                                    bondDevice.setValue(bluetoothBondState);
                                 }
                             }
 

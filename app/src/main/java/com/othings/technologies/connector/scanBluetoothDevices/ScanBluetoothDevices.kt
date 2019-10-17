@@ -59,7 +59,22 @@ class ScanBluetoothDevices : AppCompatActivity() {
         adapter.setOnClickItemListener().observe(this, Observer<Int> { position ->
 
             var bluetoothDevice = bluetoothDevices.get(position)
-            bluetooth.client.request(bluetoothDevice,"test chido".toByteArray(),this).observe(this,sendDataObserver)
+            bluetooth.bond.bondDevice(bluetoothDevice).observe(this,Observer<BluetoothBondState>{state->
+
+                if( state != null ){
+                    if(state.state == BluetoothBondState.BONDED){
+                        Snackbar.make(binding.contextView,"BONDED",Snackbar.LENGTH_SHORT).show()
+                    }
+                    else{
+                        Snackbar.make(binding.contextView,state.state,Snackbar.LENGTH_SHORT).show()
+                    }
+                }
+                else{
+                    Snackbar.make(binding.contextView,"NOT_BONDED",Snackbar.LENGTH_SHORT).show()
+                }
+
+
+            })
 
 
         })
