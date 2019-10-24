@@ -14,7 +14,7 @@ import androidx.lifecycle.MutableLiveData;
 import java.util.ArrayList;
 import java.util.List;
 
-public class BluetoothScanning implements PreferenceManager.OnActivityResultListener {
+public class BluetoothScanning implements PreferenceManager.OnActivityResultListener, PreferenceManager.OnActivityDestroyListener {
 
     private Context context;
     private BluetoothAdapter bluetoothAdapter;
@@ -32,13 +32,14 @@ public class BluetoothScanning implements PreferenceManager.OnActivityResultList
     private static final int TURN_ON_BLUETOOTH_REQUEST_CODE = 3000;
     public static final String BLUETOOTH_STATE_ON = "BLUETOOTH_STATE_ON";
     public static final String BLUETOOTH_STATE_OFF = "BLUETOOTH_STATE_OFF";
+    private IntentFilter filter;
 
 
     public BluetoothScanning(Context context){
 
         this.context = context;
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        IntentFilter filter = new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
+        filter = new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
         context.registerReceiver(broadcastReceiver, filter);
         filter = new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
         context.registerReceiver(broadcastReceiver, filter);
@@ -394,5 +395,12 @@ public class BluetoothScanning implements PreferenceManager.OnActivityResultList
         }
 
         return false;
+    }
+
+    @Override
+    public void onActivityDestroy() {
+
+        ((AppCompatActivity)context).unregisterReceiver(broadcastReceiver);
+
     }
 }

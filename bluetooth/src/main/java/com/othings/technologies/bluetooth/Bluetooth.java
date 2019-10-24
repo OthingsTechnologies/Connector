@@ -13,7 +13,7 @@ import com.othings.technologies.bluetooth.bluetoothBond.BluetoothBond;
 import com.othings.technologies.bluetooth.bluetoothCommunication.BluetoothClient;
 import com.othings.technologies.bluetooth.bluetoothScanning.BluetoothScanning;
 
-public class Bluetooth implements PreferenceManager.OnActivityResultListener , ActivityCompat.OnRequestPermissionsResultCallback {
+public class Bluetooth implements PreferenceManager.OnActivityResultListener , ActivityCompat.OnRequestPermissionsResultCallback , PreferenceManager.OnActivityDestroyListener {
 
     private Context context;
     private BluetoothBond bond;
@@ -117,4 +117,10 @@ public class Bluetooth implements PreferenceManager.OnActivityResultListener , A
         return true;
     }
 
+    @Override
+    public void onActivityDestroy() {
+
+        scanning.onActivityDestroy();
+
+    }
 }

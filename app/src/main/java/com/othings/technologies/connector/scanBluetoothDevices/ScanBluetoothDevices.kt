@@ -61,18 +61,15 @@ class ScanBluetoothDevices : AppCompatActivity() {
             var bluetoothDevice = bluetoothDevices.get(position)
             bluetooth.bond.bondDevice(bluetoothDevice).observe(this,Observer<BluetoothBondState>{state->
 
-                if( state != null ){
-                    if(state.state == BluetoothBondState.BONDED){
-                        Snackbar.make(binding.contextView,"BONDED",Snackbar.LENGTH_SHORT).show()
-                    }
-                    else{
-                        Snackbar.make(binding.contextView,state.state,Snackbar.LENGTH_SHORT).show()
-                    }
+                if(state.state == BluetoothDevice.BOND_BONDING){
+                    Snackbar.make(binding.contextView,"BONDING",Snackbar.LENGTH_SHORT).show()
                 }
-                else{
+                else if( state.state == BluetoothDevice.BOND_BONDED ){
+                    Snackbar.make(binding.contextView,"BONDED",Snackbar.LENGTH_SHORT).show()
+                }
+                else if( state.state == BluetoothDevice.BOND_NONE ){
                     Snackbar.make(binding.contextView,"NOT_BONDED",Snackbar.LENGTH_SHORT).show()
                 }
-
 
             })
 

@@ -40,7 +40,6 @@ class BluetoothDeviceAdapter(private val items : MutableList<BluetoothDevice>) :
 
     }
 
-
     inner class ViewHolder( itemView: View) : RecyclerView.ViewHolder(itemView) {
 
         private var name: TextView = itemView.findViewById(R.id.name)
